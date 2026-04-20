@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""
+PhishGuard AI — Intelligent phishing detection for URLs and emails.
+Uses feature engineering + weighted scoring to classify threats in real time.
+Author: Omobolaji Adeyan
+"""
+
+import argparse
+import json
+import sys
+from model import score_url, score_email, classify, THRESHOLD
+
+RED    = "\033[91m"
+YELLOW = "\033[93m"
+GREEN  = "\033[92m"
+CYAN   = "\033[96m"
+GRAY   = "\033[90m"
+BOLD   = "\033[1m"
+RESET  = "\033[0m"
+
+VERDICT_COLOR = {
+    "PHISHING":   RED,
+    "SUSPICIOUS": YELLOW,
+    "SAFE":       GREEN,
+}
+
+VERDICT_ICON = {
+    "PHISHING":   "PHISHING",
+    "SUSPICIOUS": "SUSPICIOUS",
+    "SAFE":       "SAFE",
+}
+
+
+def probability_bar(prob: float) -> str:
+    filled = round(prob * 20)
+    color = RED if prob >= 0.75 else YELLOW if prob >= THRESHOLD else GREEN
+    return color + "█" * filled + GRAY + "░" * (20 - filled) + RESET + f"  {prob*100:.1f}%"
+
+
+def print_banner():
+    print(f"""
+{CYAN}{BOLD}
+  ██████╗ ██╗  ██╗██╗███████╗██╗  ██╗ ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗      █████╗ ██╗
+  ██╔══██╗██║  ██║██║██╔════╝██║  ██║██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗    ██╔══██╗██║
+  ██████╔╝███████║██║███████╗███████║██║  ███╗██║   ██║███████║██████╔╝██║  ██║    ███████║██║
+  ██╔═══╝ ██╔══██║██║╚════██║██╔══██║██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║    ██╔══██║██║
+  ██║     ██║  ██║██║███████║██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝    ██║  ██║██║
+  ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝
+{RESET}{GRAY}  AI-powered phishing detection | github.com/oadeyan{RESET}
+""")
+
+
+def analyze_url(url: str, verbose: bool = False) -> dict:
+    prob, features = score_url(url)
+    verdict = classify(prob)
+    color = VERDICT_COLOR[verdict]
+
+    print(f"\n{'─'*60}")
+    print(f"  URL     : {url}")
+    print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
+    print(f"  Risk    : {probability_bar(prob)}")
+
+    if verbose:
+        print(f"\n  {GRAY}Feature breakdown:{RESET}")
+        for feat, val in features.items():
+            flag = f"{RED}*{RESET}" if val > 0 and feat != "has_https" else ""
+            print(f"    {feat:<22}: {val}  {flag}")
+
+    return {"url": url, "verdict": verdict, "probability": prob, "features": features}
+
+
+def analyze_email(subject: str, body: str, verbose: bool = False) -> dict:
+    prob, features = score_email(subject, body)
+    verdict = classify(prob)
+    color = VERDICT_COLOR[verdict]
+
+    print(f"\n{'─'*60}")
+    print(f"  Subject : {subject}")
+    print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
+    print(f"  Risk    : {probability_bar(prob)}")
+
+    if verbose:
+        print(f"\n  {GRAY}Feature breakdown:{RESET}")
+        for feat, val in features.items():
+            print(f"    {feat:<26}: {val}")
+
+    return {"subject": subject, "verdict": verdict, "probability": prob, "features": features}
+
+
+def batch_scan_urls(filepath: str, verbose: bool = False) -> list:
+    results = []
+    try:
+        with open(filepath) as f:
+            urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    except FileNotFoundError:
+        print(f"{RED}Error: File '{filepath}' not found.{RESET}")
+        sys.exit(1)
+
+    print(f"{CYAN}Scanning {len(urls)} URLs...{RESET}")
+    phishing_count = 0
+    for url in urls:
+        result = analyze_url(url, verbose=verbose)
+        results.append(result)
+        if result["verdict"] == "PHISHING":
+            phishing_count += 1
+
+    print(f"\n{BOLD}Summary: {phishing_count}/{len(urls)} URLs classified as PHISHING{RESET}")
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="PhishGuard AI — Phishing detection for URLs and emails",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python phishguard.py url "http://paypa1-secure-login.xyz/verify"
+  python phishguard.py url "https://google.com" --verbose
+  python phishguard.py email --subject "URGENT: Verify your account" --body "Click here immediately"
+  python phishguard.py batch data/urls.txt
+  python phishguard.py batch data/urls.txt --output results.json
+        """,
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # URL command
+    url_parser = subparsers.add_parser("url", help="Analyze a single URL")
+    url_parser.add_argument("target", help="URL to analyze")
+    url_parser.add_argument("--verbose", "-v", action="store_true")
+    url_parser.add_argument("--output", "-o", help="Save result to JSON file")
+
+    # Email command
+    email_parser = subparsers.add_parser("email", help="Analyze an email")
+    email_parser.add_argument("--subject", required=True, help="Email subject line")
+    email_parser.add_argument("--body", required=True, help="Email body text")
+    email_parser.add_argument("--verbose", "-v", action="store_true")
+    email_parser.add_argument("--output", "-o", help="Save result to JSON file")
+
+    # Batch command
+    batch_parser = subparsers.add_parser("batch", help="Scan a list of URLs from a file")
+    batch_parser.add_argument("file", help="Path to file with one URL per line")
+    batch_parser.add_argument("--verbose", "-v", action="store_true")
+    batch_parser.add_argument("--output", "-o", help="Save results to JSON file")
+
+    args = parser.parse_args()
+    print_banner()
+
+    if args.command == "url":
+        result = analyze_url(args.target, verbose=args.verbose)
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(result, f, indent=2)
+            print(f"\n{GREEN}Result saved to {args.output}{RESET}")
+
+    elif args.command == "email":
+        result = analyze_email(args.subject, args.body, verbose=args.verbose)
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(result, f, indent=2)
+            print(f"\n{GREEN}Result saved to {args.output}{RESET}")
+
+    elif args.command == "batch":
+        results = batch_scan_urls(args.file, verbose=args.verbose)
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(results, f, indent=2)
+            print(f"{GREEN}Results saved to {args.output}{RESET}")
+
+    print()
+
+
+if __name__ == "__main__":
+    main()
