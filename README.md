@@ -19,7 +19,11 @@ Built because most phishing detection tools are either black-box cloud services 
 
 ## How It Works
 
-Rather than relying on blocklists (which are always out of date), PhishGuard extracts behavioral and structural features from URLs and email content, then scores them using weights derived from phishing research datasets (PhishTank, APWG eCrime reports).
+Rather than relying only on blocklists, PhishGuard extracts behavioral and
+structural features from URLs and email content, then applies an explainable,
+hand-tuned heuristic model. The current weights are informed by common
+phishing indicators and protected by regression tests; they have not yet been
+validated as a statistically trained model.
 
 **URL features analyzed:**
 - Domain entropy (randomly generated domains score high)
@@ -83,6 +87,8 @@ python phishguard.py batch data/urls.txt \
 
 See the [GitHub Code Scanning guide](docs/GITHUB_CODE_SCANNING.md) for a
 copy-ready workflow using GitHub's official SARIF upload action.
+See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
+semantics, limitations, and the evidence required for scoring changes.
 
 ## Example Output
 
