@@ -1,10 +1,17 @@
 # PhishGuard AI
 
 [![Tests](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml)
+[![Maintainer](https://img.shields.io/badge/Maintainer-Omobolaji_Adeyan-0A66C2?style=flat-square)](https://github.com/omobolajiadeyan)
+[![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
 
 An explainable phishing detection engine that analyzes URLs and emails in real
 time using feature engineering and calibrated probabilistic scoring. It works
 offline and requires no API key.
+
+Created and maintained by
+[Omobolaji Adeyan](https://github.com/omobolajiadeyan), a cybersecurity
+engineer focused on practical Python security tooling, threat detection, and
+security automation.
 
 Built because most phishing detection tools are either black-box cloud services or require expensive ML training pipelines. PhishGuard runs entirely offline and explains exactly *why* it flagged something.
 
@@ -39,9 +46,10 @@ Rather than relying on blocklists (which are always out of date), PhishGuard ext
 ## Installation
 
 ```bash
-git clone https://github.com/oadeyan/phishguard-ai.git
+git clone https://github.com/omobolajiadeyan/phishguard-ai.git
 cd phishguard-ai
 python --version  # Python 3.10+ required
+python -m unittest discover -s tests -v
 ```
 
 ## Usage
@@ -97,13 +105,24 @@ phishguard-ai/
 └── README.md
 ```
 
-## Roadmap
+## Contributing
 
-- [ ] Train a proper scikit-learn Random Forest on PhishTank dataset
-- [ ] Add WHOIS domain age lookup (new domains = higher risk)
-- [ ] Browser extension version
-- [ ] REST API wrapper for SOC tool integration
-- [ ] Add email header analysis (SPF/DKIM/DMARC checks)
+Contributions are welcome from security analysts, Python developers, students,
+researchers, and first-time open-source contributors.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+- Pick a scoped task from the
+  [open issues](https://github.com/omobolajiadeyan/phishguard-ai/issues).
+- Use [Discussions](https://github.com/omobolajiadeyan/phishguard-ai/discussions)
+  for design questions and detection ideas.
+- See [ROADMAP.md](ROADMAP.md) for current priorities.
+- Accepted contributors are credited in [AUTHORS.md](AUTHORS.md).
+
+## Project Leadership
+
+- **Creator and Lead Maintainer:** [Omobolaji Adeyan](https://github.com/omobolajiadeyan)
+- **LinkedIn:** [linkedin.com/in/oeadeyan](https://www.linkedin.com/in/oeadeyan)
+- **Security contact:** [omobolaji.adeyan@gmail.com](mailto:omobolaji.adeyan@gmail.com)
 
 ## Author
 
