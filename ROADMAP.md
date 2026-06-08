@@ -12,11 +12,16 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 | Detection | [IDN and punycode signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/2) | Help wanted |
 | Quality | [Labeled calibration benchmark](https://github.com/omobolajiadeyan/phishguard-ai/issues/3) | Help wanted |
 
+## Recently Shipped
+
+- SARIF 2.1.0 output for GitHub Code Scanning and CI security pipelines
+- Calibrated scoring with regression coverage for common legitimate URLs
+- Windows-safe output handling and Python 3.10-3.13 continuous integration
+
 ## Next
 
 - Email-header analysis for SPF, DKIM, and DMARC indicators
 - URL redirect-chain and hostname-normalization analysis
-- SARIF export for code-scanning and security pipelines
 - A documented Python API in addition to the command-line interface
 - Reproducible evaluation against public-safe labeled datasets
 

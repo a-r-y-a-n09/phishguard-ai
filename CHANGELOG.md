@@ -2,6 +2,20 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [0.3.0] - 2026-06-08
+
+### Added
+
+- Dependency-free SARIF 2.1.0 export for URL, email, and batch results
+- GitHub Code Scanning workflow template and integration guide
+- Stable finding fingerprints, severity mapping, and explainable SARIF properties
+- CLI and serializer regression tests for JSON and SARIF output
+
+### Changed
+
+- Added `--format json|sarif` to every CLI scan command
+- Standardized report files as UTF-8 with a trailing newline
+
 ## [0.2.0] - 2026-06-08
 
 ### Added

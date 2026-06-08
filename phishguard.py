@@ -6,9 +6,9 @@ Author: Omobolaji Adeyan
 """
 
 import argparse
-import json
 import sys
 from model import score_url, score_email, classify, THRESHOLD
+from reporting import write_report
 
 
 def configure_output() -> None:
@@ -119,6 +119,16 @@ def batch_scan_urls(filepath: str, verbose: bool = False) -> list:
     return results
 
 
+def add_output_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--output", "-o", help="Save results to a file")
+    parser.add_argument(
+        "--format",
+        choices=("json", "sarif"),
+        default="json",
+        help="Output format used with --output (default: json)",
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="PhishGuard AI — Phishing detection for URLs and emails",
@@ -138,43 +148,43 @@ Examples:
     url_parser = subparsers.add_parser("url", help="Analyze a single URL")
     url_parser.add_argument("target", help="URL to analyze")
     url_parser.add_argument("--verbose", "-v", action="store_true")
-    url_parser.add_argument("--output", "-o", help="Save result to JSON file")
+    add_output_arguments(url_parser)
 
     # Email command
     email_parser = subparsers.add_parser("email", help="Analyze an email")
     email_parser.add_argument("--subject", required=True, help="Email subject line")
     email_parser.add_argument("--body", required=True, help="Email body text")
     email_parser.add_argument("--verbose", "-v", action="store_true")
-    email_parser.add_argument("--output", "-o", help="Save result to JSON file")
+    add_output_arguments(email_parser)
 
     # Batch command
     batch_parser = subparsers.add_parser("batch", help="Scan a list of URLs from a file")
     batch_parser.add_argument("file", help="Path to file with one URL per line")
     batch_parser.add_argument("--verbose", "-v", action="store_true")
-    batch_parser.add_argument("--output", "-o", help="Save results to JSON file")
+    add_output_arguments(batch_parser)
 
     args = parser.parse_args()
+    if args.format == "sarif" and not args.output:
+        parser.error("--format sarif requires --output")
+
     print_banner()
 
     if args.command == "url":
         result = analyze_url(args.target, verbose=args.verbose)
         if args.output:
-            with open(args.output, "w") as f:
-                json.dump(result, f, indent=2)
+            write_report(result, args.output, args.format)
             print(f"\n{GREEN}Result saved to {args.output}{RESET}")
 
     elif args.command == "email":
         result = analyze_email(args.subject, args.body, verbose=args.verbose)
         if args.output:
-            with open(args.output, "w") as f:
-                json.dump(result, f, indent=2)
+            write_report(result, args.output, args.format)
             print(f"\n{GREEN}Result saved to {args.output}{RESET}")
 
     elif args.command == "batch":
         results = batch_scan_urls(args.file, verbose=args.verbose)
         if args.output:
-            with open(args.output, "w") as f:
-                json.dump(results, f, indent=2)
+            write_report(results, args.output, args.format)
             print(f"{GREEN}Results saved to {args.output}{RESET}")
 
     print()

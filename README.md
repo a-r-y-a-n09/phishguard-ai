@@ -42,6 +42,7 @@ Rather than relying on blocklists (which are always out of date), PhishGuard ext
 - Explainable results — see which features triggered the alert
 - Three verdict levels: `SAFE`, `SUSPICIOUS`, `PHISHING`
 - JSON export for integration into SOC workflows
+- SARIF 2.1.0 export for GitHub Code Scanning and CI security pipelines
 - Zero dependencies — pure Python standard library
 - Offline — no data sent anywhere
 
@@ -73,7 +74,15 @@ python phishguard.py batch data/urls.txt
 
 # Export results to JSON
 python phishguard.py batch data/urls.txt --output results.json
+
+# Export actionable findings to SARIF 2.1.0
+python phishguard.py batch data/urls.txt \
+  --format sarif \
+  --output phishguard.sarif
 ```
+
+See the [GitHub Code Scanning guide](docs/GITHUB_CODE_SCANNING.md) for a
+copy-ready workflow using GitHub's official SARIF upload action.
 
 ## Example Output
 
@@ -102,6 +111,7 @@ phishguard-ai/
 ├── phishguard.py    # CLI entrypoint — commands: url, email, batch
 ├── features.py      # Feature extraction (URL + email)
 ├── model.py         # Weighted scoring model + sigmoid normalisation
+├── reporting.py     # Native JSON and SARIF 2.1.0 serialization
 ├── data/
 │   └── urls.txt     # Sample URLs for batch testing
 └── README.md
