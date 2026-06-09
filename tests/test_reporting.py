@@ -1,5 +1,8 @@
+import os
+import tempfile
 import unittest
 
+from phishguard import batch_scan_urls
 from reporting import SARIF_SCHEMA, build_sarif
 
 
@@ -116,14 +119,14 @@ class SarifReportingTests(unittest.TestCase):
         location = sarif["runs"][0]["results"][0]["locations"][0]
         self.assertNotIn("physicalLocation", location)
 
-    def test_artifact_location_is_basename_only(self):
-        """Full paths must be reduced to filename only in artifactLocation.uri."""
+    def test_artifact_location_preserves_relative_path(self):
+        """Full relative path must be kept, not reduced to basename."""
         result = {
             "url": "http://evil.xyz",
             "verdict": "PHISHING",
             "probability": 0.9,
             "features": {},
-            "source_path": "/home/user/data/urls.txt",
+            "source_path": "security/urls.txt",
             "line_number": 7,
         }
         sarif = build_sarif(result)
@@ -131,7 +134,42 @@ class SarifReportingTests(unittest.TestCase):
             sarif["runs"][0]["results"][0]["locations"][0]
             ["physicalLocation"]["artifactLocation"]["uri"]
         )
-        self.assertEqual(uri, "urls.txt")
-       
+        self.assertEqual(uri, "security/urls.txt")
+
+    def test_batch_end_to_end_sarif(self):
+        """End-to-end: batch_scan_urls wires source_path and line_number correctly."""
+        content = (
+            "# this is a comment\n"           # line 1 - comment, skipped
+            "\n"                               # line 2 - blank, skipped
+            "https://www.google.com\n"         # line 3 - SAFE, omitted from SARIF
+            "http://paypa1-secure-login.xyz\n" # line 4 - PHISHING
+        )
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, encoding="utf-8"
+        ) as f:
+            f.write(content)
+            tmp_path = f.name
+
+        try:
+            results = batch_scan_urls(tmp_path, verbose=False)
+            sarif = build_sarif(results)
+            findings = sarif["runs"][0]["results"]
+
+            # SAFE result must be omitted
+            self.assertEqual(len(findings), 1)
+
+            finding = findings[0]
+            physical = finding["locations"][0]["physicalLocation"]
+
+            # Must use forward slashes and keep full path
+            uri = physical["artifactLocation"]["uri"]
+            self.assertIn("/", uri.replace("\\", "/"))
+
+            # Phishing URL was on line 4
+            self.assertEqual(physical["region"]["startLine"], 4)
+        finally:
+            os.unlink(tmp_path)
+
+
 if __name__ == "__main__":
     unittest.main()

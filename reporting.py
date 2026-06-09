@@ -84,7 +84,6 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
     probability = float(result["probability"])
     fingerprint_source = f"{target_type}:{target}".encode("utf-8")
 
-    # 1. Base location setup
     location_entry = {
         "logicalLocations": [
             {
@@ -94,16 +93,13 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
         ]
     }
 
-    # 2. Extract batch file source context if available
-    # Check if the result metadata includes a file source path (passed during batch scanning)
-    # 2. Attach physical location from stored metadata (set by batch_scan_urls)
     source_path = result.get("source_path")
     line_number = result.get("line_number")
 
     if source_path and line_number:
         location_entry["physicalLocation"] = {
             "artifactLocation": {
-                "uri": Path(source_path).name
+                "uri": Path(source_path).as_posix()
             },
             "region": {
                 "startLine": line_number
